@@ -1,0 +1,30 @@
+
+package io.github.gbdroid.utils
+
+import android.content.Context
+import android.content.SharedPreferences
+import android.net.Uri
+import io.github.gbdroid.GBdroidApplication
+import androidx.core.content.edit
+
+object SearchLocationHelper {
+    private val prefs: SharedPreferences by lazy {
+        GBdroidApplication.context.getSharedPreferences("EmulatorPrefs", Context.MODE_PRIVATE)
+    }
+    private const val GAME_FOLDERS = "game_folders"
+
+    fun saveFolderUri(uri: Uri) {
+        val savedUris = prefs.getStringSet(GAME_FOLDERS, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        savedUris.add(uri.toString())
+        prefs.edit { putStringSet(GAME_FOLDERS, savedUris) }
+    }
+
+    fun getGameFolders(): List<Uri> {
+        val savedUris = prefs.getStringSet(GAME_FOLDERS, emptySet()) ?: emptySet()
+        return savedUris.map { Uri.parse(it) }
+    }
+
+    fun isFolderExists(folder: Uri): Boolean {
+        return getGameFolders().contains(folder)
+    }
+}

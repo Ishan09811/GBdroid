@@ -1,0 +1,142 @@
+package io.github.gbdroid
+
+import android.net.Uri
+import android.opengl.GLSurfaceView
+import android.os.Build
+import android.os.Bundle
+import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import io.github.gbdroid.audio.AudioPlayer
+import io.github.gbdroid.core.Core
+import io.github.gbdroid.databinding.ActivityEmulationBinding
+import io.github.gbdroid.renderer.gl.OpenGLRenderer
+import io.github.gbdroid.input.InputState
+import io.github.gbdroid.renderer.gl.EmulationThread
+import io.github.gbdroid.renderer.gl.FrameBuffer
+import java.io.ByteArrayOutputStream
+
+class EmulationActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityEmulationBinding
+    private lateinit var inputState: InputState
+    private lateinit var audioPlayer: AudioPlayer
+    private lateinit var glSurfaceView: GLSurfaceView
+    private lateinit var frameBuffer: FrameBuffer
+
+    private var emulationThread: EmulationThread? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityEmulationBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        enableFullScreenImmersive()
+
+        inputState = InputState()
+        audioPlayer = AudioPlayer()
+        // placeholder size 0 until the first ROM loads and publishes a real frame
+        frameBuffer = FrameBuffer(initialPixelCount = 0)
+
+        if (!Core.init()) {
+            Toast.makeText(this, "Failed to initialize emulator core", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        setupGlSurface()
+        setupTouchControls()
+
+        intent.getStringExtra("gameUri")?.let { uriString: String ->
+            loadRomFromUri(uriString.toUri())
+        }
+    }
+
+    private fun enableFullScreenImmersive() {
+        with(window) {
+            WindowCompat.setDecorFitsSystemWindows(this, false)
+            val insetsController = WindowInsetsControllerCompat(this, decorView)
+            insetsController.apply {
+                hide(WindowInsetsCompat.Type.systemBars())
+                systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) attributes.layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+    }
+
+    private fun setupGlSurface() {
+        glSurfaceView = binding.glSurfaceView
+        glSurfaceView.setEGLContextClientVersion(2)
+        glSurfaceView.setRenderer(OpenGLRenderer(frameBuffer))
+        glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
+        audioPlayer.start(Core.audioSampleRate())
+
+    }
+
+    private fun setupTouchControls() {
+        binding.touchControlsView.inputState = inputState
+    }
+
+    private fun loadRomFromUri(uri: Uri) {
+        try {
+            // stop any previously running emulation thread before loading
+            stopEmulationThread()
+
+            val ok = Core.loadRom(uri)
+            if (ok) {
+                Core.reset()
+                Toast.makeText(this, "ROM loaded ${Core.gameTitle()}", Toast.LENGTH_SHORT).show()
+                startEmulationThread()
+            } else {
+                Toast.makeText(this, "Core rejected ROM", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error reading ROM: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun startEmulationThread() {
+        val thread = EmulationThread(
+            inputState = inputState,
+            audioPlayer = audioPlayer,
+            frameBuffer = frameBuffer,
+            onFrameReady = { glSurfaceView.requestRender() }
+        )
+        emulationThread = thread
+        thread.start()
+    }
+
+    private fun stopEmulationThread() {
+        emulationThread?.let { thread ->
+            thread.requestStop()
+            thread.join(THREAD_JOIN_TIMEOUT_MS)
+        }
+        emulationThread = null
+    }
+
+    override fun onPause() {
+        super.onPause()
+        emulationThread?.paused = true
+        glSurfaceView.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        glSurfaceView.onResume()
+        emulationThread?.paused = false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopEmulationThread()
+        audioPlayer.stop()
+        Core.shutdown()
+    }
+
+    companion object {
+        private const val THREAD_JOIN_TIMEOUT_MS = 500L
+    }
+}

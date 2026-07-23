@@ -1,0 +1,93 @@
+
+package io.github.gbdroid.renderer.gl
+
+import io.github.gbdroid.audio.AudioPlayer
+import io.github.gbdroid.core.Core
+import io.github.gbdroid.input.InputState
+import java.util.concurrent.atomic.AtomicBoolean
+
+class EmulationThread(
+    private val inputState: InputState,
+    private val audioPlayer: AudioPlayer,
+    private val frameBuffer: FrameBuffer,
+    private val onFrameReady: () -> Unit
+) : Thread("gbdroid-emulation") {
+
+    private val running = AtomicBoolean(false)
+
+    @Volatile
+    var paused: Boolean = false
+
+    override fun run() {
+        running.set(true)
+        val frameIntervalNs = NANOS_PER_SECOND / GBA_FPS
+        var nextFrameDeadlineNs = System.nanoTime()
+
+        while (running.get()) {
+            if (paused) {
+                sleepQuietly(50)
+                nextFrameDeadlineNs = System.nanoTime()
+                continue
+            }
+
+            stepOneFrame()
+
+            nextFrameDeadlineNs += frameIntervalNs.toLong()
+            val now = System.nanoTime()
+            val remainingNs = nextFrameDeadlineNs - now
+
+            if (remainingNs > 0) {
+                sleepNanos(remainingNs)
+            } else if (remainingNs < -MAX_LAG_NS) {
+                nextFrameDeadlineNs = now
+            }
+        }
+    }
+
+    private fun stepOneFrame() {
+        Core.setKeys(inputState.current())
+        Core.runFrame()
+
+        val width = Core.width
+        val height = Core.height
+        if (width > 0 && height > 0) {
+            val pixels = Core.getVideoBuffer()
+            frameBuffer.publish(pixels, width, height)
+            onFrameReady()
+        }
+
+        val (audioBuf, frames) = Core.fillAudioBuffer()
+        if (frames > 0) {
+            audioPlayer.write(audioBuf, frames)
+        }
+    }
+
+    fun requestStop() {
+        running.set(false)
+        interrupt()
+    }
+
+    private fun sleepNanos(nanos: Long) {
+        try {
+            val millis = nanos / 1_000_000
+            val remainderNanos = (nanos % 1_000_000).toInt()
+            sleep(millis, remainderNanos)
+        } catch (_: InterruptedException) {
+            // expected on requestStop()
+        }
+    }
+
+    private fun sleepQuietly(millis: Long) {
+        try {
+            sleep(millis)
+        } catch (_: InterruptedException) {
+            // expected on requestStop()
+        }
+    }
+
+    companion object {
+        private const val NANOS_PER_SECOND = 1_000_000_000.0
+        const val GBA_FPS = 16777216.0 / 280896.0
+        private val MAX_LAG_NS = (NANOS_PER_SECOND / GBA_FPS * 5).toLong()
+    }
+}
