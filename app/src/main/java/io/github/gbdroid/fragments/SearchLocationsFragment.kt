@@ -16,7 +16,6 @@ import io.github.gbdroid.utils.SearchLocationHelper
 import io.github.gbdroid.utils.applySafePadding
 
 class SearchLocationsFragment : Fragment() {
-
     private var _binding: FragmentSearchLocationsBinding? = null
     private val binding get() = _binding!!
 
@@ -44,7 +43,7 @@ class SearchLocationsFragment : Fragment() {
             removeFolder(uri)
         }
         binding.folderList.adapter = adapter
-        adapter.submitList(folderList)
+        adapter.submitList(folderList.toList())
 
         binding.addFolder.setOnClickListener {
             dirPickerLauncher.launch(null)
@@ -62,16 +61,14 @@ class SearchLocationsFragment : Fragment() {
         if (!folderList.contains(uri)) {
             folderList.add(uri)
             SearchLocationHelper.saveFolderUri(uri)
-            adapter.submitList(folderList)
-            adapter.notifyItemInserted(folderList.indexOf(uri))
+            adapter.submitList(folderList.toList())
         }
     }
 
     private fun removeFolder(uri: Uri) {
         folderList.remove(uri)
         SearchLocationHelper.removeFolder(uri)
-        adapter.submitList(folderList)
-        adapter.notifyItemRemoved(folderList.indexOf(uri))
+        adapter.submitList(folderList.toList())
 
         try {
             requireContext().contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
