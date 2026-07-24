@@ -96,6 +96,9 @@ object Core {
 
     fun isGba(): Boolean = nativeGetPlatform() == PLATFORM_GBA
 
+    fun loadSaveData(saveBytes: ByteArray): Boolean = nativeLoadSaveData(saveBytes)
+    fun exportSaveData(): ByteArray = nativeExportSaveData()
+
     private external fun nativeInit(): Boolean
     private external fun nativeShutdown()
     private external fun nativeLoadRom(romData: ByteArray): Boolean
@@ -107,6 +110,8 @@ object Core {
     private external fun nativeSetKeys(keyMask: Int)
     private external fun nativeFillAudioBuffer(outSamples: ShortArray): Int
     private external fun nativeGetAudioSampleRate(): Int
+    private external fun nativeLoadSaveData(saveData: ByteArray): Boolean
+    private external fun nativeExportSaveData(): ByteArray
     private external fun nativeGetGameTitle(): String
     private external fun nativeGetGameCode(): String
     private external fun nativeGetPlatform(): Int

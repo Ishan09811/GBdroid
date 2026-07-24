@@ -41,6 +41,9 @@ public:
     virtual bool saveState(uint8_t* outBuffer, size_t bufferSize, size_t* outWritten) = 0;
     virtual bool loadState(const uint8_t* data, size_t size) = 0;
 
+    virtual bool loadSaveData(const uint8_t* data, size_t size) = 0;
+    virtual std::vector<uint8_t> exportSaveData() = 0;
+
     virtual std::string getGameTitle() = 0;
     virtual std::string getGameCode() = 0;
 

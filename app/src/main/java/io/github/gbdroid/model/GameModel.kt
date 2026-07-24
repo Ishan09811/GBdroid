@@ -9,5 +9,6 @@ data class GameModel(
     var title: String? = null,
     var version: String? = null,
     var iconUrl: String? = null,
-    var code: String? = null
+    var code: String? = null,
+    var lastPlayed: Long = 0L
 )

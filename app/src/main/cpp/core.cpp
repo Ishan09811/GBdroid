@@ -115,6 +115,33 @@ Java_io_github_gbdroid_core_Core_nativeGetAudioSampleRate(JNIEnv* env, jobject /
     return g_core ? g_core->getAudioSampleRate() : 32768;
 }
 
+// restores previously persisted cart save bytes into the core, must be called after nativeLoadRom()
+JNIEXPORT jboolean JNICALL
+Java_io_github_gbdroid_core_Core_nativeLoadSaveData(JNIEnv* env, jobject /*thiz*/, jbyteArray saveData) {
+    std::lock_guard<std::mutex> lock(g_coreMutex);
+    if (!g_core) return JNI_FALSE;
+    jsize len = env->GetArrayLength(saveData);
+    std::vector<uint8_t> buffer(static_cast<size_t>(len));
+    if (len > 0) {
+        env->GetByteArrayRegion(saveData, 0, len, reinterpret_cast<jbyte*>(buffer.data()));
+    }
+    bool ok = g_core->loadSaveData(buffer.data(), buffer.size());
+    LOGI("nativeLoadSaveData: %zu bytes, success=%d", buffer.size(), ok);
+    return ok ? JNI_TRUE : JNI_FALSE;
+}
+
+// returns the current cart save data as a new Java byte[] for the caller to persist to disk. returns a zero length array if there's no
+JNIEXPORT jbyteArray JNICALL
+Java_io_github_gbdroid_core_Core_nativeExportSaveData(JNIEnv* env, jobject /*thiz*/) {
+    std::lock_guard<std::mutex> lock(g_coreMutex);
+    std::vector<uint8_t> data = g_core ? g_core->exportSaveData() : std::vector<uint8_t>();
+    jbyteArray result = env->NewByteArray(static_cast<jsize>(data.size()));
+    if (!data.empty()) {
+        env->SetByteArrayRegion(result, 0, static_cast<jsize>(data.size()), reinterpret_cast<const jbyte*>(data.data()));
+    }
+    return result;
+}
+
 JNIEXPORT jstring JNICALL
 Java_io_github_gbdroid_core_Core_nativeGetGameTitle(JNIEnv* env, jobject /*thiz*/) {
     std::lock_guard<std::mutex> lock(g_coreMutex);

@@ -180,6 +180,28 @@ public:
         return ok;
     }
 
+    bool loadSaveData(const uint8_t* data, size_t size) override {
+        if (!m_core) return false;
+        bool ok = m_core->savedataRestore(m_core, data, size, true);
+        if (!ok) {
+            LOGE("savedataRestore failed (size=%zu)", size);
+        }
+        return ok;
+    }
+
+    std::vector<uint8_t> exportSaveData() override {
+        if (!m_core) return {};
+        void* sram = nullptr;
+        size_t size = m_core->savedataClone(m_core, &sram);
+        if (size == 0 || sram == nullptr) {
+            return {};
+        }
+
+        std::vector<uint8_t> result(static_cast<uint8_t*>(sram), static_cast<uint8_t*>(sram) + size);
+        free(sram);
+        return result;
+    }
+
     std::string getGameTitle() override {
         if (!m_core) return "";
         char titleBuf[16] = {0};

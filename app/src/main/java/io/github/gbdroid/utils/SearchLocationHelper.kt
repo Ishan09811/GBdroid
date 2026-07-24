@@ -9,13 +9,19 @@ import androidx.core.content.edit
 
 object SearchLocationHelper {
     private val prefs: SharedPreferences by lazy {
-        GBdroidApplication.context.getSharedPreferences("EmulatorPrefs", Context.MODE_PRIVATE)
+        GBdroidApplication.context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     }
     private const val GAME_FOLDERS = "game_folders"
 
     fun saveFolderUri(uri: Uri) {
         val savedUris = prefs.getStringSet(GAME_FOLDERS, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
         savedUris.add(uri.toString())
+        prefs.edit { putStringSet(GAME_FOLDERS, savedUris) }
+    }
+
+    fun removeFolder(uri: Uri) {
+        val savedUris = prefs.getStringSet(GAME_FOLDERS, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        savedUris.remove(uri.toString())
         prefs.edit { putStringSet(GAME_FOLDERS, savedUris) }
     }
 

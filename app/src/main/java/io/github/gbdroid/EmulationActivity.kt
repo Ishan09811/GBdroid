@@ -4,6 +4,7 @@ import android.net.Uri
 import android.opengl.GLSurfaceView
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +19,7 @@ import io.github.gbdroid.renderer.gl.OpenGLRenderer
 import io.github.gbdroid.input.InputState
 import io.github.gbdroid.renderer.gl.EmulationThread
 import io.github.gbdroid.renderer.gl.FrameBuffer
+import io.github.gbdroid.utils.SaveDataStore
 import java.io.ByteArrayOutputStream
 
 class EmulationActivity : AppCompatActivity() {
@@ -26,6 +28,8 @@ class EmulationActivity : AppCompatActivity() {
     private lateinit var audioPlayer: AudioPlayer
     private lateinit var glSurfaceView: GLSurfaceView
     private lateinit var frameBuffer: FrameBuffer
+
+    private var currentGameCode: String? = null
 
     private var emulationThread: EmulationThread? = null
 
@@ -87,14 +91,29 @@ class EmulationActivity : AppCompatActivity() {
 
             val ok = Core.loadRom(uri)
             if (ok) {
+                currentGameCode = Core.gameCode()
+                val save = SaveDataStore.load(currentGameCode!!)
+                val saveOk = Core.loadSaveData(save)
+                if (!saveOk) {
+                    // expected when playing for the first time
+                    Log.w("EmulationActivity", "could not restore save data")
+                }
                 Core.reset()
-                Toast.makeText(this, "ROM loaded ${Core.gameTitle()}", Toast.LENGTH_SHORT).show()
+                Log.i("EmulationActivity", "ROM loaded ${Core.gameTitle()}")
                 startEmulationThread()
             } else {
-                Toast.makeText(this, "Core rejected ROM", Toast.LENGTH_LONG).show()
+                Log.w("EmulationActivity", "Core rejected ROM")
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "Error reading ROM: ${e.message}", Toast.LENGTH_LONG).show()
+            Log.e("EmulationActivity", "Error reading ROM: ${e.message}")
+        }
+    }
+
+    private fun persistSaveData() {
+        val code = currentGameCode ?: return
+        val saveBytes = Core.exportSaveData()
+        if (saveBytes.isNotEmpty()) {
+            SaveDataStore.save(code, saveBytes)
         }
     }
 
@@ -121,6 +140,7 @@ class EmulationActivity : AppCompatActivity() {
         super.onPause()
         emulationThread?.paused = true
         glSurfaceView.onPause()
+        persistSaveData()
     }
 
     override fun onResume() {
@@ -131,6 +151,7 @@ class EmulationActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        persistSaveData()
         stopEmulationThread()
         audioPlayer.stop()
         Core.shutdown()

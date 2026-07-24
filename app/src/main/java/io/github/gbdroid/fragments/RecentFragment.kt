@@ -2,86 +2,68 @@
 package io.github.gbdroid.fragments
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.snackbar.Snackbar
 import io.github.gbdroid.EmulationActivity
 import io.github.gbdroid.adapters.GameAdapter
-import io.github.gbdroid.databinding.FragmentGamesBinding
+import io.github.gbdroid.databinding.FragmentRecentBinding
 import io.github.gbdroid.model.GameModel
 import io.github.gbdroid.utils.GameCacheManager
-import io.github.gbdroid.utils.SearchLocationHelper
 import io.github.gbdroid.utils.applySafePadding
 import io.github.gbdroid.viewmodel.GamesViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class GamesFragment : Fragment() {
+class RecentFragment : Fragment() {
 
-    private var _binding: FragmentGamesBinding? = null
+    private var _binding: FragmentRecentBinding? = null
     private val binding get() = _binding!!
-    private lateinit var gameAdapter: GameAdapter
 
+    private lateinit var recentAdapter: GameAdapter
     private val viewModel: GamesViewModel by viewModels()
-
-    private val folderPickerLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocumentTree()
-    ) { uri: Uri? ->
-        uri?.let {
-            if (SearchLocationHelper.isFolderExists(it)) {
-                Snackbar.make(
-                    binding.root,
-                    "Folder already added to library",
-                    Snackbar.LENGTH_SHORT
-                ).setAnchorView(binding.add).show()
-                return@let
-            }
-            requireContext().contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-            SearchLocationHelper.saveFolderUri(it)
-            viewModel.loadGames(listOf(it), clearExisting = false)
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        if (_binding == null) _binding = FragmentGamesBinding.inflate(inflater, container, false)
+        if (_binding == null) _binding = FragmentRecentBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        gameAdapter = GameAdapter { game ->
+        recentAdapter = GameAdapter { game ->
             launchEmulationActivity(game)
         }
 
-        binding.gamesList.layoutManager = LinearLayoutManager(requireContext())
-        binding.gamesList.adapter = gameAdapter
-        binding.gamesList.applySafePadding()
-
-        binding.add.setOnClickListener {
-            folderPickerLauncher.launch(null)
-        }
+        binding.root.applySafePadding()
+        binding.recentRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        binding.recentRecyclerView.adapter = recentAdapter
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.gameList.collect { gamesList ->
-                gameAdapter.submitList(gamesList)
+                recentAdapter.submitList(
+                    gamesList.filter { it.lastPlayed > 0L }.sortedByDescending { it.lastPlayed }
+                )
             }
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadGamesFromDisk()
+    }
+
     private fun launchEmulationActivity(game: GameModel) {
         game.lastPlayed = System.currentTimeMillis()
+
         lifecycleScope.launch(Dispatchers.IO) {
             GameCacheManager.saveGame(game)
         }
@@ -90,11 +72,6 @@ class GamesFragment : Fragment() {
             putExtra("gameUri", game.uri.toString())
         }
         startActivity(intent)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.checkUpdatedList()
     }
 
     override fun onDestroyView() {

@@ -2,26 +2,28 @@ package io.github.gbdroid.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil3.load
 import coil3.request.crossfade
-import coil3.request.fallback
 import coil3.request.error
+import coil3.request.fallback
 import coil3.request.transformations
 import coil3.transform.RoundedCornersTransformation
-import io.github.gbdroid.model.GameModel
 import io.github.gbdroid.databinding.ItemGameBinding
+import io.github.gbdroid.model.GameModel
 
 class GameAdapter(
-    private val games: List<GameModel>,
     private val onGameClick: (GameModel) -> Unit
-) : RecyclerView.Adapter<GameAdapter.GameViewHolder>() {
+) : ListAdapter<GameModel, GameAdapter.GameViewHolder>(GameDiffCallback()) {
 
     inner class GameViewHolder(val binding: ItemGameBinding) : RecyclerView.ViewHolder(binding.root) {
         init {
             binding.root.setOnClickListener {
-                if (adapterPosition != RecyclerView.NO_POSITION) {
-                    onGameClick(games[adapterPosition])
+                val position = bindingAdapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    onGameClick(getItem(position))
                 }
             }
         }
@@ -33,7 +35,7 @@ class GameAdapter(
     }
 
     override fun onBindViewHolder(holder: GameViewHolder, position: Int) {
-        val game = games[position]
+        val game = getItem(position)
 
         holder.binding.title.text = game.title ?: game.fileName
         holder.binding.version.text = game.version ?: "Version: --"
@@ -45,5 +47,13 @@ class GameAdapter(
         }
     }
 
-    override fun getItemCount(): Int = games.size
+    class GameDiffCallback : DiffUtil.ItemCallback<GameModel>() {
+        override fun areItemsTheSame(oldItem: GameModel, newItem: GameModel): Boolean {
+            return oldItem.uri == newItem.uri
+        }
+
+        override fun areContentsTheSame(oldItem: GameModel, newItem: GameModel): Boolean {
+            return oldItem == newItem
+        }
+    }
 }

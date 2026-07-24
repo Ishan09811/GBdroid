@@ -21,9 +21,10 @@ object GameCacheManager {
                 fileName = fileName,
                 title = json.optString("title").takeIf { it.isNotEmpty() },
                 version = json.optString("version").takeIf { it.isNotEmpty() },
-                iconUrl = json.optString("iconUrl").takeIf { it.isNotEmpty() }
+                iconUrl = json.optString("iconUrl").takeIf { it.isNotEmpty() },
+                lastPlayed = json.optLong("lastPlayed", 0L)
             )
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -33,8 +34,36 @@ object GameCacheManager {
             put("title", game.title ?: "")
             put("version", game.version ?: "")
             put("iconUrl", game.iconUrl ?: "")
+            put("lastPlayed", game.lastPlayed)
         }
 
         prefs.edit { putString(game.uri.toString(), json.toString()) }
+    }
+
+    fun getAllCachedGames(): List<GameModel> {
+        val allGames = mutableListOf<GameModel>()
+        val allEntries = prefs.all
+
+        for ((uriString, jsonString) in allEntries) {
+            if (jsonString is String) {
+                try {
+                    val json = JSONObject(jsonString)
+                    val uri = Uri.parse(uriString)
+                    val FallbackName = uri.lastPathSegment ?: "Unknown Game"
+
+                    allGames.add(
+                        GameModel(
+                            uri = uri,
+                            fileName = FallbackName,
+                            title = json.optString("title").takeIf { it.isNotEmpty() },
+                            version = json.optString("version").takeIf { it.isNotEmpty() },
+                            iconUrl = json.optString("iconUrl").takeIf { it.isNotEmpty() },
+                            lastPlayed = json.optLong("lastPlayed", 0L)
+                        )
+                    )
+                } catch (_: Exception) {}
+            }
+        }
+        return allGames
     }
 }
