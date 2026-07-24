@@ -5,7 +5,6 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 
 class AudioPlayer {
-
     private var audioTrack: AudioTrack? = null
 
     fun start(sampleRateHz: Int) {
