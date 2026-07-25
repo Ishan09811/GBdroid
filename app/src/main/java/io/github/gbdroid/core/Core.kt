@@ -77,15 +77,7 @@ object Core {
 
     fun setKeys(keyMask: Int) = nativeSetKeys(keyMask)
 
-    fun fillAudioBuffer(): Pair<ShortArray, Int> {
-        val frames = nativeFillAudioBuffer(audioBuffer)
-        return audioBuffer to frames
-    }
-
-    fun audioSampleRate(): Int = nativeGetAudioSampleRate()
-
     fun gameTitle(): String = nativeGetGameTitle()
-
     fun gameCode(): String = nativeGetGameCode()
 
     fun readRomVersion(romBytes: ByteArray, isGba: Boolean): Int {
@@ -108,8 +100,6 @@ object Core {
     private external fun nativeGetWidth(): Int
     private external fun nativeGetHeight(): Int
     private external fun nativeSetKeys(keyMask: Int)
-    private external fun nativeFillAudioBuffer(outSamples: ShortArray): Int
-    private external fun nativeGetAudioSampleRate(): Int
     private external fun nativeLoadSaveData(saveData: ByteArray): Boolean
     private external fun nativeExportSaveData(): ByteArray
     private external fun nativeGetGameTitle(): String

@@ -12,20 +12,17 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import io.github.gbdroid.audio.AudioPlayer
 import io.github.gbdroid.core.Core
 import io.github.gbdroid.databinding.ActivityEmulationBinding
-import io.github.gbdroid.renderer.gl.OpenGLRenderer
 import io.github.gbdroid.input.InputState
 import io.github.gbdroid.renderer.gl.EmulationThread
 import io.github.gbdroid.renderer.gl.FrameBuffer
+import io.github.gbdroid.renderer.gl.OpenGLRenderer
 import io.github.gbdroid.utils.SaveDataStore
-import java.io.ByteArrayOutputStream
 
 class EmulationActivity : AppCompatActivity() {
     private lateinit var binding: ActivityEmulationBinding
     private lateinit var inputState: InputState
-    private lateinit var audioPlayer: AudioPlayer
     private lateinit var glSurfaceView: GLSurfaceView
     private lateinit var frameBuffer: FrameBuffer
 
@@ -40,7 +37,6 @@ class EmulationActivity : AppCompatActivity() {
         enableFullScreenImmersive()
 
         inputState = InputState()
-        audioPlayer = AudioPlayer()
         // placeholder size 0 until the first ROM loads and publishes a real frame
         frameBuffer = FrameBuffer(initialPixelCount = 0)
 
@@ -76,7 +72,6 @@ class EmulationActivity : AppCompatActivity() {
         glSurfaceView.setEGLContextClientVersion(2)
         glSurfaceView.setRenderer(OpenGLRenderer(frameBuffer))
         glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
-        audioPlayer.start(Core.audioSampleRate())
 
     }
 
@@ -120,7 +115,6 @@ class EmulationActivity : AppCompatActivity() {
     private fun startEmulationThread() {
         val thread = EmulationThread(
             inputState = inputState,
-            audioPlayer = audioPlayer,
             frameBuffer = frameBuffer,
             onFrameReady = { glSurfaceView.requestRender() }
         )
@@ -153,7 +147,6 @@ class EmulationActivity : AppCompatActivity() {
         super.onDestroy()
         persistSaveData()
         stopEmulationThread()
-        audioPlayer.stop()
         Core.shutdown()
     }
 

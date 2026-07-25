@@ -1,14 +1,12 @@
 
 package io.github.gbdroid.renderer.gl
 
-import io.github.gbdroid.audio.AudioPlayer
 import io.github.gbdroid.core.Core
 import io.github.gbdroid.input.InputState
 import java.util.concurrent.atomic.AtomicBoolean
 
 class EmulationThread(
     private val inputState: InputState,
-    private val audioPlayer: AudioPlayer,
     private val frameBuffer: FrameBuffer,
     private val onFrameReady: () -> Unit
 ) : Thread("gbdroid-emulation") {
@@ -54,11 +52,6 @@ class EmulationThread(
             val pixels = Core.getVideoBuffer()
             frameBuffer.publish(pixels, width, height)
             onFrameReady()
-        }
-
-        val (audioBuf, frames) = Core.fillAudioBuffer()
-        if (frames > 0) {
-            audioPlayer.write(audioBuf, frames)
         }
     }
 

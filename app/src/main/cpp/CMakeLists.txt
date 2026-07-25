@@ -25,7 +25,8 @@ set(BUILD_PYTHON OFF CACHE BOOL "" FORCE)
 set(BUILD_LIBRETRO OFF CACHE BOOL "" FORCE)
 set(USE_FFMPEG OFF CACHE BOOL "" FORCE)
 set(USE_LIBZIP OFF CACHE BOOL "" FORCE)
-set(USE_MINIZIP ON CACHE BOOL "" FORCE)
+set(USE_MINIZIP OFF CACHE BOOL "" FORCE)
+set(USE_ZLIB ON CACHE BOOL "" FORCE)
 set(USE_SQLITE3 OFF CACHE BOOL "" FORCE)
 set(USE_DISCORD_RPC OFF CACHE BOOL "" FORCE)
 set(USE_EDITLINE OFF CACHE BOOL "" FORCE)
@@ -35,6 +36,10 @@ set(BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(BUILD_STATIC ON CACHE BOOL "" FORCE)
 
 add_subdirectory(${MGBA_DIR} mgba_build EXCLUDE_FROM_ALL)
+
+if(TARGET zlibstatic)
+    message(STATUS "mGBA ZIP-ROM support: bundled zlibstatic target found - OK")
+endif()
 
 if(TARGET mgba)
     set(MGBA_CORE_TARGET mgba)
@@ -51,8 +56,9 @@ endif()
 
 
 add_library(gbdroid SHARED
-        core.cpp
+    core.cpp
     core_interface.cpp
+    audio/oboe_audio_player.cpp
 )
 
 target_include_directories(gbdroid PRIVATE
@@ -60,6 +66,8 @@ target_include_directories(gbdroid PRIVATE
     ${MGBA_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/mgba_build
 )
+
+find_package(oboe REQUIRED CONFIG)
 
 find_library(log-lib log)
 find_library(android-lib android)
@@ -72,4 +80,5 @@ target_link_libraries(gbdroid
     ${android-lib}
     ${gles-lib}
     ${z-lib}
+    oboe::oboe
 )

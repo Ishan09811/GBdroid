@@ -1,4 +1,5 @@
 #include "core_interface.h"
+#include "audio/oboe_audio_player.h"
 
 #include <android/log.h>
 #include <cstring>
@@ -25,6 +26,7 @@ public:
 
     void shutdown() override {
         unloadRom();
+        m_audioPlayer.stop();
     }
 
     bool loadRom(const uint8_t* data, size_t size) override {
@@ -71,7 +73,14 @@ public:
             return false;
         }
 
-        m_sampleRate = 32768;
+        m_sampleRate = 48000; // best for android
+
+        if (m_audioPlayer.hasStream()) {
+            m_audioPlayer.stop();
+        }
+        if (!m_audioPlayer.start(m_sampleRate, static_cast<size_t>(m_sampleRate) / 10)) {
+            LOGE("Failed to start Oboe audio playback, continuing without audio");
+        }
 
         m_core->reset(m_core);
 
@@ -95,6 +104,12 @@ public:
 
     void runFrame() override {
         if (m_core) m_core->runFrame(m_core);
+
+        int16_t audioBuf[kAudioPullFrames * 2];
+        size_t frames = pullAudioSamples(audioBuf, kAudioPullFrames);
+        if (frames > 0) {
+            m_audioPlayer.write(audioBuf, frames);
+        }
     }
 
     const uint32_t* getVideoBuffer() override {
@@ -127,33 +142,11 @@ public:
     }
 
     size_t fillAudioBuffer(int16_t* outBuffer, size_t maxFrames) override {
-        if (!m_core) {
-            std::memset(outBuffer, 0, maxFrames * 2 * sizeof(int16_t));
-            return maxFrames;
+        size_t frames = pullAudioSamples(outBuffer, maxFrames);
+        if (frames < maxFrames) {
+            std::memset(outBuffer + frames * 2, 0, (maxFrames - frames) * 2 * sizeof(int16_t));
         }
-
-        blip_t* left = m_core->getAudioChannel(m_core, 0);
-        blip_t* right = m_core->getAudioChannel(m_core, 1);
-        if (!left || !right) {
-            std::memset(outBuffer, 0, maxFrames * 2 * sizeof(int16_t));
-            return maxFrames;
-        }
-
-        size_t available = blip_samples_avail(left);
-        size_t framesToRead = available < maxFrames ? available : maxFrames;
-        if (framesToRead == 0) return 0;
-
-        std::vector<int16_t> leftBuf(framesToRead);
-        std::vector<int16_t> rightBuf(framesToRead);
-        blip_read_samples(left, leftBuf.data(), static_cast<int>(framesToRead), 0);
-        blip_read_samples(right, rightBuf.data(), static_cast<int>(framesToRead), 0);
-
-        for (size_t i = 0; i < framesToRead; ++i) {
-            outBuffer[i * 2] = leftBuf[i];
-            outBuffer[i * 2 + 1] = rightBuf[i];
-        }
-
-        return framesToRead;
+        return maxFrames;
     }
 
     int getAudioSampleRate() const override {
@@ -224,7 +217,34 @@ public:
     }
 
 private:
+    size_t pullAudioSamples(int16_t* outBuffer, size_t maxFrames) {
+        if (!m_core) return 0;
+
+        blip_t* left = m_core->getAudioChannel(m_core, 0);
+        blip_t* right = m_core->getAudioChannel(m_core, 1);
+        if (!left || !right) return 0;
+
+        size_t available = blip_samples_avail(left);
+        size_t framesToRead = available < maxFrames ? available : maxFrames;
+        if (framesToRead == 0) return 0;
+
+        std::vector<int16_t> leftBuf(framesToRead);
+        std::vector<int16_t> rightBuf(framesToRead);
+        blip_read_samples(left, leftBuf.data(), static_cast<int>(framesToRead), 0);
+        blip_read_samples(right, rightBuf.data(), static_cast<int>(framesToRead), 0);
+
+        for (size_t i = 0; i < framesToRead; ++i) {
+            outBuffer[i * 2] = leftBuf[i];
+            outBuffer[i * 2 + 1] = rightBuf[i];
+        }
+
+        return framesToRead;
+    }
+
+    static constexpr size_t kAudioPullFrames = 4096;
+
     mCore* m_core = nullptr;
+    OboeAudioPlayer m_audioPlayer;
     std::vector<uint8_t> m_romBuffer;
     std::vector<uint32_t> m_videoBuffer;
     // only populated and used when color_t is 16-bit; empty and unused otherwise.

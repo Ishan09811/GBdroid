@@ -97,24 +97,6 @@ Java_io_github_gbdroid_core_Core_nativeSetKeys(JNIEnv* env, jobject /*thiz*/, ji
     if (g_core) g_core->setKeys(static_cast<uint16_t>(keyMask));
 }
 
-JNIEXPORT jint JNICALL
-Java_io_github_gbdroid_core_Core_nativeFillAudioBuffer(JNIEnv* env, jobject /*thiz*/, jshortArray outSamples) {
-    std::lock_guard<std::mutex> lock(g_coreMutex);
-    if (!g_core) return 0;
-    jsize len = env->GetArrayLength(outSamples);
-    size_t maxFrames = static_cast<size_t>(len) / 2;
-    std::vector<int16_t> buffer(maxFrames * 2);
-    size_t written = g_core->fillAudioBuffer(buffer.data(), maxFrames);
-    env->SetShortArrayRegion(outSamples, 0, static_cast<jsize>(written * 2), buffer.data());
-    return static_cast<jint>(written);
-}
-
-JNIEXPORT jint JNICALL
-Java_io_github_gbdroid_core_Core_nativeGetAudioSampleRate(JNIEnv* env, jobject /*thiz*/) {
-    std::lock_guard<std::mutex> lock(g_coreMutex);
-    return g_core ? g_core->getAudioSampleRate() : 32768;
-}
-
 // restores previously persisted cart save bytes into the core, must be called after nativeLoadRom()
 JNIEXPORT jboolean JNICALL
 Java_io_github_gbdroid_core_Core_nativeLoadSaveData(JNIEnv* env, jobject /*thiz*/, jbyteArray saveData) {
