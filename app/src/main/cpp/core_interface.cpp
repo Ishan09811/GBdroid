@@ -75,6 +75,17 @@ public:
 
         m_sampleRate = 48000; // best for android
 
+        m_core->setAudioBufferSize(m_core, kAudioPullFrames);
+
+        blip_t* left = m_core->getAudioChannel(m_core, 0);
+        blip_t* right = m_core->getAudioChannel(m_core, 1);
+
+        if (left && right) {
+            unsigned frequency = m_core->frequency(m_core); 
+            blip_set_rates(left, frequency, m_sampleRate);
+            blip_set_rates(right, frequency, m_sampleRate);
+        }
+
         if (m_audioPlayer.hasStream()) {
             m_audioPlayer.stop();
         }
