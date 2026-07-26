@@ -24,6 +24,7 @@ public:
     virtual void shutdown() = 0;
 
     virtual bool loadRom(const uint8_t* data, size_t size) = 0;
+    virtual bool quickLoadRom(const uint8_t* data, size_t size) = 0;
     virtual void unloadRom() = 0;
     virtual void reset() = 0;
 

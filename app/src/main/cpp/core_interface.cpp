@@ -29,6 +29,42 @@ public:
         m_audioPlayer.stop();
     }
 
+    bool quickLoadRom(const uint8_t* data, size_t size) override {
+        if (m_core != nullptr) {
+            unloadRom();
+        }
+
+        m_romBuffer.assign(data, data + size);
+        VFile* vf = VFileFromConstMemory(m_romBuffer.data(), m_romBuffer.size());
+        if (!vf) {
+            LOGE("VFileFromConstMemory failed");
+            return false;
+        }
+
+        m_core = mCoreFindVF(vf);
+        if (!m_core) {
+            LOGE("mCoreFindVF failed to identify ROM type");
+            vf->close(vf);
+            return false;
+        }
+
+        if (!m_core->init(m_core)) {
+            LOGE("mCore init failed");
+            m_core->deinit(m_core);
+            m_core = nullptr;
+            return false;
+        }
+
+        if (!m_core->loadROM(m_core, vf)) {
+            LOGE("mCore loadROM failed");
+            m_core->deinit(m_core);
+            m_core = nullptr;
+            return false;
+        }
+
+        return true;
+    }
+
     bool loadRom(const uint8_t* data, size_t size) override {
         if (m_core != nullptr) {
             unloadRom();

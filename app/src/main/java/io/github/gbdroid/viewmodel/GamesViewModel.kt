@@ -116,7 +116,7 @@ class GamesViewModel : ViewModel() {
             val element = iterator.next()
             if (element.title == null) {
                 if (!Core.init()) continue
-                if (!Core.loadRom(element.uri)) {
+                if (!Core.quickLoadRom(element.uri)) {
                     iterator.remove()
                     listStructureChanged = true
                     continue
@@ -140,7 +140,7 @@ class GamesViewModel : ViewModel() {
         for (element in currentList) {
             if (element.title == null) {
                 if (!Core.init()) continue
-                if (!Core.loadRom(element.uri)) {
+                if (!Core.quickLoadRom(element.uri)) {
                     withContext(Dispatchers.Main) {
                         _gameList.value = _gameList.value.filter { it.uri != element.uri }
                     }

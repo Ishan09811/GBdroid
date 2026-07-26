@@ -44,6 +44,18 @@ object Core {
         initialized = false
     }
 
+    fun quickLoadRom(uri: Uri): Boolean {
+        check(initialized) { "Core.init() must succeed before loadRom()" }
+        val romBytes = GBdroidApplication.context.contentResolver.openInputStream(uri)?.use { input ->
+            val output = ByteArrayOutputStream()
+            input.copyTo(output)
+            output.toByteArray()
+        } ?: return false
+        val ok = nativeLoadRom(romBytes)
+        if (ok) gameVersion = "v${readRomVersion(romBytes, isGba())}"
+        return ok
+    }
+
     fun loadRom(uri: Uri): Boolean {
         check(initialized) { "Core.init() must succeed before loadRom()" }
         val romBytes = GBdroidApplication.context.contentResolver.openInputStream(uri)?.use { input ->
@@ -94,6 +106,7 @@ object Core {
     private external fun nativeInit(): Boolean
     private external fun nativeShutdown()
     private external fun nativeLoadRom(romData: ByteArray): Boolean
+    private external fun nativeQuickLoadRom(romData: ByteArray): Boolean
     private external fun nativeReset()
     private external fun nativeRunFrame()
     private external fun nativeGetVideoBuffer(outPixels: IntArray)
