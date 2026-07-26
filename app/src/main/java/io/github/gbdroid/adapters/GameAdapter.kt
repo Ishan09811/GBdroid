@@ -38,6 +38,7 @@ class GameAdapter(
         val game = getItem(position)
 
         holder.binding.title.text = game.title ?: game.fileName
+        holder.binding.title.isSelected = true
         holder.binding.version.text = game.version ?: "Version: --"
         holder.binding.icon.load(game.iconUrl ?: "") {
             crossfade(true)

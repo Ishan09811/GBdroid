@@ -123,8 +123,8 @@ class GamesViewModel : ViewModel() {
                     continue
                 }
 
-                element.title = Core.gameTitle()
                 element.code = Core.gameCode()
+                element.title = NoIntroParser.findTitle(element.code ?: "") ?: Core.gameTitle()
                 element.version = Core.gameVersion
                 element.iconUrl = getIconUrl(element.title ?: "", Core.getPlatform())
                 GameCacheManager.saveGame(element)
