@@ -70,6 +70,8 @@ public:
     bool start(int32_t sampleRateHz, size_t ringBufferFrames);
     void stop();
 
+    void setMuted(bool mute) { isMuted = mute; }
+
     void write(const int16_t* samples, size_t frameCount);
     bool hasStream() const { return stream != nullptr; }
 
@@ -81,4 +83,5 @@ private:
     std::unique_ptr<SpscRingBuffer> ringBuffer;
     int32_t sampleRate = 0;
     size_t ringBufferFrames = 0;
+    std::atomic<bool> isMuted{false};
 };

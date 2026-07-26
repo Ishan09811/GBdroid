@@ -10,6 +10,7 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import io.github.gbdroid.R
 import androidx.core.content.withStyledAttributes
 import androidx.core.content.edit
+import io.github.gbdroid.utils.GlobalConfig
 
 class SwitchPreference @JvmOverloads constructor(
     context: Context,
@@ -19,7 +20,7 @@ class SwitchPreference @JvmOverloads constructor(
 
     private var prefKey: String? = null
     private var sharedPreferences: SharedPreferences =
-        context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        context.getSharedPreferences(GlobalConfig.PREFS_NAME, Context.MODE_PRIVATE)
 
     private val titleView: TextView
     private val subtitleView: TextView
@@ -31,6 +32,9 @@ class SwitchPreference @JvmOverloads constructor(
         titleView = findViewById(R.id.title)
         subtitleView = findViewById(R.id.subtitle)
         switchView = findViewById(R.id.materialSwitch)
+
+        switchView.isSaveEnabled = false
+        isSaveEnabled = false
 
         isClickable = true
         isFocusable = true

@@ -69,7 +69,7 @@ public:
         return true;
     }
 
-    bool loadRom(const uint8_t* data, size_t size) override {
+    bool loadRom(const uint8_t* data, size_t size, bool skipBios, bool rtcEnable) override {
         if (m_core != nullptr) {
             unloadRom();
         }
@@ -96,6 +96,12 @@ public:
         }
 
         mCoreInitConfig(m_core, nullptr);
+
+        mCoreConfigSetIntValue(&m_core->config, "skipBios", skipBios ? 1 : 0);
+        mCoreConfigSetIntValue(&m_core->config, "hw.rtc", rtcEnable ? 1 : 0);
+
+        LOGI("Config Applied -> Key: '%s' = %d", "skipBios", skipBios ? 1 : 0);
+        LOGI("Config Applied -> Key: '%s' = %d", "hw.rtc", rtcEnable ? 1 : 0);
 
         unsigned width, height;
         m_core->desiredVideoDimensions(m_core, &width, &height);
@@ -201,7 +207,7 @@ public:
     }
 
     int getAudioSampleRate() const override {
-        return m_sampleRate > 0 ? m_sampleRate : 32768;
+        return m_sampleRate > 0 ? m_sampleRate : 48000;
     }
 
     bool saveState(uint8_t* outBuffer, size_t bufferSize, size_t* outWritten) override {
@@ -265,6 +271,19 @@ public:
     int getPlatform() override {
         if (!m_core) return -1;
         return static_cast<int>(m_core->platform(m_core));
+    }
+
+    void setConfigInt(const char* key, int value) override {
+        if (!m_core) return;
+        mCoreConfigSetIntValue(&m_core->config, key, value);
+    }
+
+    void setConfigString(const char* key, const char* value) override {
+        mCoreConfigSetValue(&m_core->config, key, value);
+    }
+
+    void setAudioMuted(bool mute) override {
+        m_audioPlayer.setMuted(mute);
     }
 
 private:

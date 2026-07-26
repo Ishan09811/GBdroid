@@ -3,12 +3,14 @@ package io.github.gbdroid.renderer.gl
 
 import io.github.gbdroid.core.Core
 import io.github.gbdroid.input.InputState
+import io.github.gbdroid.utils.GlobalConfig
 import java.util.concurrent.atomic.AtomicBoolean
 
 class EmulationThread(
     private val inputState: InputState,
     private val frameBuffer: FrameBuffer,
-    private val onFrameReady: () -> Unit
+    private val onFrameReady: () -> Unit,
+    private val onFpsUpdated: (Double) -> Unit
 ) : Thread("gbdroid-emulation") {
 
     private val running = AtomicBoolean(false)
@@ -16,29 +18,54 @@ class EmulationThread(
     @Volatile
     var paused: Boolean = false
 
+    private var framesThisSecond = 0
+    private var lastFpsTimestampNs = 0L
+
     override fun run() {
         running.set(true)
         val frameIntervalNs = NANOS_PER_SECOND / GBA_FPS
         var nextFrameDeadlineNs = System.nanoTime()
+        lastFpsTimestampNs = System.nanoTime()
 
         while (running.get()) {
             if (paused) {
                 sleepQuietly(50)
                 nextFrameDeadlineNs = System.nanoTime()
+                lastFpsTimestampNs = System.nanoTime()
                 continue
             }
 
             stepOneFrame()
+            calculateFps()
 
             nextFrameDeadlineNs += frameIntervalNs.toLong()
             val now = System.nanoTime()
             val remainingNs = nextFrameDeadlineNs - now
 
-            if (remainingNs > 0) {
-                sleepNanos(remainingNs)
-            } else if (remainingNs < -MAX_LAG_NS) {
+            if (GlobalConfig.fastForward) {
+                // skip sleeping to run as fast as possible
                 nextFrameDeadlineNs = now
+            } else {
+                if (remainingNs > 0) {
+                    sleepNanos(remainingNs)
+                } else if (remainingNs < -MAX_LAG_NS) {
+                    nextFrameDeadlineNs = now
+                }
             }
+        }
+    }
+
+    private fun calculateFps() {
+        framesThisSecond++
+        val now = System.nanoTime()
+        val elapsedNs = now - lastFpsTimestampNs
+
+        if (elapsedNs >= 1_000_000_000L) {
+            val exactFps = (framesThisSecond * 1_000_000_000.0) / elapsedNs
+
+            onFpsUpdated(exactFps)
+            framesThisSecond = 0
+            lastFpsTimestampNs = now
         }
     }
 

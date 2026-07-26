@@ -3,6 +3,7 @@ package io.github.gbdroid
 
 import android.app.Application
 import android.content.Context
+import io.github.gbdroid.utils.GlobalConfig
 
 class GBdroidApplication : Application() {
     init {
@@ -19,5 +20,6 @@ class GBdroidApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        GlobalConfig.initialize(context)
     }
 }

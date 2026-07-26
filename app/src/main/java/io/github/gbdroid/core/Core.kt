@@ -3,6 +3,7 @@ package io.github.gbdroid.core
 
 import android.net.Uri
 import io.github.gbdroid.GBdroidApplication
+import io.github.gbdroid.utils.GlobalConfig
 import java.io.ByteArrayOutputStream
 
 enum class PLATFORM(val value: Int) {
@@ -73,8 +74,9 @@ object Core {
             input.copyTo(output)
             output.toByteArray()
         } ?: return false
-        val ok = nativeLoadRom(romBytes)
+        val ok = nativeLoadRom(romBytes, GlobalConfig.skipBios, GlobalConfig.rtcEnable)
         if (ok) {
+            applyConfigs()
             width = nativeGetWidth()
             height = nativeGetHeight()
             if (width > 0 && height > 0) {
@@ -112,6 +114,12 @@ object Core {
         return PLATFORM.from(nativeGetPlatform())
     }
 
+    fun applyConfigs() {
+        nativeSetConfigInt("frameskip", GlobalConfig.frameskip)
+        nativeSetConfigInt("volume", GlobalConfig.volume)
+        nativeSetConfigInt("mute", if (GlobalConfig.mute) 1 else 0)
+    }
+
     fun isGba(): Boolean = getPlatform() == PLATFORM.GBA
 
     fun loadSaveData(saveBytes: ByteArray): Boolean = nativeLoadSaveData(saveBytes)
@@ -119,7 +127,7 @@ object Core {
 
     private external fun nativeInit(): Boolean
     private external fun nativeShutdown()
-    private external fun nativeLoadRom(romData: ByteArray): Boolean
+    private external fun nativeLoadRom(romData: ByteArray, skipBios: Boolean, rtcEnable: Boolean): Boolean
     private external fun nativeQuickLoadRom(romData: ByteArray): Boolean
     private external fun nativeReset()
     private external fun nativeRunFrame()
@@ -132,4 +140,6 @@ object Core {
     private external fun nativeGetGameTitle(): String
     private external fun nativeGetGameCode(): String
     private external fun nativeGetPlatform(): Int
+    private external fun nativeSetConfigInt(key: String, value: Int)
+    private external fun nativeSetConfigString(key: String, value: String)
 }

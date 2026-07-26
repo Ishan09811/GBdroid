@@ -5,6 +5,7 @@ import android.opengl.GLSurfaceView
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -18,7 +19,9 @@ import io.github.gbdroid.input.InputState
 import io.github.gbdroid.renderer.gl.EmulationThread
 import io.github.gbdroid.renderer.gl.FrameBuffer
 import io.github.gbdroid.renderer.gl.OpenGLRenderer
+import io.github.gbdroid.utils.GlobalConfig
 import io.github.gbdroid.utils.SaveDataStore
+import io.github.gbdroid.utils.applySafePadding
 
 class EmulationActivity : AppCompatActivity() {
     private lateinit var binding: ActivityEmulationBinding
@@ -35,6 +38,9 @@ class EmulationActivity : AppCompatActivity() {
         binding = ActivityEmulationBinding.inflate(layoutInflater)
         setContentView(binding.root)
         enableFullScreenImmersive()
+
+        binding.fps.visibility = if (GlobalConfig.fpsCounter) View.VISIBLE else View.GONE
+        if (GlobalConfig.fpsCounter) binding.fps.applySafePadding()
 
         inputState = InputState()
         // placeholder size 0 until the first ROM loads and publishes a real frame
@@ -116,7 +122,14 @@ class EmulationActivity : AppCompatActivity() {
         val thread = EmulationThread(
             inputState = inputState,
             frameBuffer = frameBuffer,
-            onFrameReady = { glSurfaceView.requestRender() }
+            onFrameReady = { glSurfaceView.requestRender() },
+            onFpsUpdated = { currentFps ->
+                if (GlobalConfig.fpsCounter) {
+                    runOnUiThread {
+                        binding.fps.text = String.format("%.1f FPS", currentFps)
+                    }
+                }
+            }
         )
         emulationThread = thread
         thread.start()

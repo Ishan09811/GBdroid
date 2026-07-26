@@ -23,7 +23,7 @@ public:
     virtual bool init() = 0;
     virtual void shutdown() = 0;
 
-    virtual bool loadRom(const uint8_t* data, size_t size) = 0;
+    virtual bool loadRom(const uint8_t* data, size_t size, bool skipBios, bool rtcEnable) = 0;
     virtual bool quickLoadRom(const uint8_t* data, size_t size) = 0;
     virtual void unloadRom() = 0;
     virtual void reset() = 0;
@@ -49,6 +49,11 @@ public:
     virtual std::string getGameCode() = 0;
 
     virtual int getPlatform() = 0;
+
+    virtual void setConfigInt(const char* key, int value) = 0;
+    virtual void setConfigString(const char* key, const char* value) = 0;
+
+    virtual void setAudioMuted(bool mute) = 0;
 };
 
 CoreInterface* createCore();

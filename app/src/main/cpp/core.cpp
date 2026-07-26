@@ -59,7 +59,7 @@ Java_io_github_gbdroid_core_Core_nativeQuickLoadRom(JNIEnv* env, jobject /*thiz*
 }
 
 JNIEXPORT jboolean JNICALL
-Java_io_github_gbdroid_core_Core_nativeLoadRom(JNIEnv* env, jobject /*thiz*/, jbyteArray romData) {
+Java_io_github_gbdroid_core_Core_nativeLoadRom(JNIEnv* env, jobject /*thiz*/, jbyteArray romData, jboolean skipBios, jboolean rtcEnable) {
     std::lock_guard<std::mutex> lock(g_coreMutex);
     if (g_core == nullptr) {
         LOGE("nativeLoadRom called before nativeInit");
@@ -69,7 +69,7 @@ Java_io_github_gbdroid_core_Core_nativeLoadRom(JNIEnv* env, jobject /*thiz*/, jb
     std::vector<uint8_t> buffer(static_cast<size_t>(len));
     env->GetByteArrayRegion(romData, 0, len, reinterpret_cast<jbyte*>(buffer.data()));
 
-    bool ok = g_core->loadRom(buffer.data(), buffer.size());
+    bool ok = g_core->loadRom(buffer.data(), buffer.size(), skipBios, rtcEnable);
     LOGI("nativeLoadRom: %zu bytes, success=%d", buffer.size(), ok);
     return ok ? JNI_TRUE : JNI_FALSE;
 }
@@ -158,6 +158,26 @@ JNIEXPORT jint JNICALL
 Java_io_github_gbdroid_core_Core_nativeGetPlatform(JNIEnv* env, jobject /*thiz*/) {
     std::lock_guard<std::mutex> lock(g_coreMutex);
     return g_core ? g_core->getPlatform() : -1;
+}
+
+JNIEXPORT void JNICALL
+Java_io_github_gbdroid_core_Core_nativeSetConfigInt(JNIEnv* env, jobject thiz, jstring jKey, jint value) {
+    const char* key = env->GetStringUTFChars(jKey, nullptr);
+    g_core->setConfigInt(key, value);
+    if (strcmp(key, "mute") == 0) {
+        g_core->setAudioMuted(value == 1);
+    }
+    LOGI("Config Applied -> Key: '%s' = %d", key, value);
+    env->ReleaseStringUTFChars(jKey, key);
+}
+
+JNIEXPORT void JNICALL
+Java_io_github_gbdroid_core_Core_nativeSetConfigString(JNIEnv* env, jobject thiz, jstring jKey, jstring jValue) {
+    const char* key = env->GetStringUTFChars(jKey, nullptr);
+    const char* value = env->GetStringUTFChars(jValue, nullptr);
+    g_core->setConfigString(key, value);
+    env->ReleaseStringUTFChars(jKey, key);
+    env->ReleaseStringUTFChars(jValue, value);
 }
 
 } // extern "C"

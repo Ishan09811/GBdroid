@@ -68,6 +68,9 @@ oboe::DataCallbackResult OboeAudioPlayer::onAudioReady(oboe::AudioStream* audioS
     auto* out = static_cast<int16_t*>(audioData);
     if (ringBuffer) {
         ringBuffer->read(out, static_cast<size_t>(numFrames));
+        if (isMuted) {
+            std::fill(out, out + numFrames * 2, static_cast<int16_t>(0));
+        }
     } else {
         std::fill(out, out + numFrames * 2, static_cast<int16_t>(0));
     }
