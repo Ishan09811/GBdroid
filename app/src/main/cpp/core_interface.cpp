@@ -252,7 +252,7 @@ private:
         return framesToRead;
     }
 
-    static constexpr size_t kAudioPullFrames = 4096;
+    static constexpr size_t kAudioPullFrames = 1024;
 
     mCore* m_core = nullptr;
     OboeAudioPlayer m_audioPlayer;
