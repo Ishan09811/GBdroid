@@ -55,12 +55,16 @@ public:
             return false;
         }
 
+        mCoreInitConfig(m_core, nullptr);
+
         if (!m_core->loadROM(m_core, vf)) {
             LOGE("mCore loadROM failed");
             m_core->deinit(m_core);
             m_core = nullptr;
             return false;
         }
+
+        m_core->reset(m_core);
 
         return true;
     }

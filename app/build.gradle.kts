@@ -75,6 +75,12 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.jsoup)
     implementation(libs.oboe)
+    implementation(libs.zstd.jni) {
+        artifact {
+            extension = "aar"
+            type = "aar"
+        }
+    }
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

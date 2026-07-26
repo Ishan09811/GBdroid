@@ -5,9 +5,20 @@ import android.net.Uri
 import io.github.gbdroid.GBdroidApplication
 import java.io.ByteArrayOutputStream
 
-object Core {
-    private const val PLATFORM_GBA = 0
+enum class PLATFORM(val value: Int) {
+    NONE(-1), GBA(0), GB(1);
 
+    companion object {
+        fun from(value: Int): PLATFORM = when (value) {
+            -1 -> NONE
+            0 -> GBA
+            1 -> GB
+            else -> NONE
+        }
+    }
+}
+
+object Core {
     init {
         System.loadLibrary("gbdroid")
     }
@@ -17,7 +28,6 @@ object Core {
     var gameVersion = "v0"
 
     private var videoBuffer: IntArray = IntArray(0)
-    private var audioBuffer: ShortArray = ShortArray(4096)
 
     var width: Int = 0
         private set
@@ -51,7 +61,7 @@ object Core {
             input.copyTo(output)
             output.toByteArray()
         } ?: return false
-        val ok = nativeLoadRom(romBytes)
+        val ok = nativeQuickLoadRom(romBytes)
         if (ok) gameVersion = "v${readRomVersion(romBytes, isGba())}"
         return ok
     }
@@ -98,7 +108,11 @@ object Core {
         return romBytes[offset].toInt() and 0xFF
     }
 
-    fun isGba(): Boolean = nativeGetPlatform() == PLATFORM_GBA
+    fun getPlatform(): PLATFORM {
+        return PLATFORM.from(nativeGetPlatform())
+    }
+
+    fun isGba(): Boolean = getPlatform() == PLATFORM.GBA
 
     fun loadSaveData(saveBytes: ByteArray): Boolean = nativeLoadSaveData(saveBytes)
     fun exportSaveData(): ByteArray = nativeExportSaveData()

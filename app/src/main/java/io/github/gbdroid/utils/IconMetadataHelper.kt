@@ -1,24 +1,22 @@
 
 package io.github.gbdroid.utils
 
-import android.util.Log
-import org.jsoup.Jsoup
+import io.github.gbdroid.core.PLATFORM
+import java.net.URLEncoder
 
 object IconMetadataHelper {
-    fun getIconUrl(gameTitle: String?): String? {
-        if (gameTitle == null) return null
+    fun getIconUrl(gameTitle: String?, platform: PLATFORM): String? {
+        if (gameTitle.isNullOrBlank()) return null
 
-        return try {
-            val searchUrl = "https://thegamesdb.net/search.php?name=${gameTitle.replace(" ", "+")}"
-            val document = Jsoup.connect(searchUrl)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                .get()
-
-            val imageElement = document.selectFirst("div.card img.card-img-top")
-            imageElement?.attr("src")
-        } catch (e: Exception) {
-            Log.e("IconMetadataHelper", "Failed to scrape HTML", e)
-            null
+        val systemFolder = when (platform) {
+            PLATFORM.GB -> "Nintendo - Game Boy"
+            PLATFORM.GBA -> "Nintendo - Game Boy Advance"
+            else -> "Nintendo - Game Boy Color" // I assume it to be gbc as mgba does not give us any specific value for gbc
         }
+
+        val encodedSystemFolder = URLEncoder.encode(systemFolder, "UTF-8").replace("+", "%20")
+        val sanitizedTitle = gameTitle.replace(Regex("[&*/:`<>?|\\\\\"]"), "_")
+        val encodedTitle = URLEncoder.encode(sanitizedTitle, "UTF-8").replace("+", "%20")
+        return "https://thumbnails.libretro.com/$encodedSystemFolder/Named_Boxarts/$encodedTitle.png"
     }
 }

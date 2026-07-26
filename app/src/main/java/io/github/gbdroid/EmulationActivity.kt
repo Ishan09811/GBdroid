@@ -94,7 +94,7 @@ class EmulationActivity : AppCompatActivity() {
                     Log.w("EmulationActivity", "could not restore save data")
                 }
                 Core.reset()
-                Log.i("EmulationActivity", "ROM loaded ${Core.gameTitle()}")
+                Log.i("EmulationActivity", "ROM loaded ${Core.gameTitle()}, ${Core.gameCode()}")
                 startEmulationThread()
             } else {
                 Log.w("EmulationActivity", "Core rejected ROM")

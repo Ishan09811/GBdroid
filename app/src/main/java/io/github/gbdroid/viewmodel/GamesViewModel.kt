@@ -2,6 +2,7 @@
 package io.github.gbdroid.viewmodel
 
 import android.net.Uri
+import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,7 @@ import io.github.gbdroid.core.Core
 import io.github.gbdroid.model.GameModel
 import io.github.gbdroid.utils.GameCacheManager
 import io.github.gbdroid.utils.IconMetadataHelper.getIconUrl
+import io.github.gbdroid.utils.NoIntroParser
 import io.github.gbdroid.utils.SearchLocationHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -125,7 +127,7 @@ class GamesViewModel : ViewModel() {
                 element.title = Core.gameTitle()
                 element.code = Core.gameCode()
                 element.version = Core.gameVersion
-                element.iconUrl = getIconUrl(element.title ?: "")
+                element.iconUrl = getIconUrl(element.title ?: "", Core.getPlatform())
                 GameCacheManager.saveGame(element)
                 listStructureChanged = true
                 Core.reset()
@@ -147,9 +149,9 @@ class GamesViewModel : ViewModel() {
                     continue
                 }
 
-                val gameTitle = Core.gameTitle()
                 val gameCode = Core.gameCode()
-                val iconUrl = getIconUrl(gameTitle)
+                val gameTitle = NoIntroParser.findTitle(gameCode) ?: Core.gameTitle()
+                val iconUrl = getIconUrl(gameTitle, Core.getPlatform())
 
                 val updatedGame = element.copy(
                     title = gameTitle,
