@@ -1,5 +1,6 @@
 #include "core_interface.h"
 #include "audio/oboe_audio_player.h"
+#include "mgba/gb/interface.h"
 
 #include <android/log.h>
 #include <cstring>
@@ -10,6 +11,7 @@ extern "C" {
 #include <mgba/core/blip_buf.h>
 #include <mgba/core/version.h>
 #include <mgba/core/serialize.h>
+#include <mgba/internal/gb/gb.h>
 #include <mgba-util/vfs.h>
 }
 
@@ -63,8 +65,6 @@ public:
             m_core = nullptr;
             return false;
         }
-
-        m_core->reset(m_core);
 
         return true;
     }
@@ -138,8 +138,6 @@ public:
         if (!m_audioPlayer.start(m_sampleRate, static_cast<size_t>(m_sampleRate) / 10)) {
             LOGE("Failed to start Oboe audio playback, continuing without audio");
         }
-
-        m_core->reset(m_core);
 
         LOGI("ROM loaded: %dx%d, sampleRate=%d", m_width, m_height, m_sampleRate);
         return true;
@@ -269,8 +267,50 @@ public:
     }
 
     int getPlatform() override {
-        if (!m_core) return -1;
-        return static_cast<int>(m_core->platform(m_core));
+        if (!m_core) return PLATFORM_UNKNOWN;
+
+        int basePlatform = m_core->platform(m_core);
+
+        if (basePlatform == mPLATFORM_GBA) {
+            return PLATFORM_GBA;
+        }
+
+        if (basePlatform == mPLATFORM_GB) {
+            struct GB* gbCore = reinterpret_cast<struct GB*>(m_core->board);
+            if (!gbCore) return PLATFORM_GB;
+
+            switch (gbCore->model) {
+                case GB_MODEL_CGB:
+                    return PLATFORM_GBC;
+                case GB_MODEL_SGB:
+                    return PLATFORM_SGB;
+                default:
+                    return PLATFORM_GB;
+            }
+        }
+
+        return PLATFORM_UNKNOWN;
+    }
+
+
+    bool loadBios(const uint8_t* data, size_t size) override {
+        if (!m_core) {
+            LOGE("loadBios called before loadRom");
+            return false;
+        }
+
+        VFile* vf = VFileFromConstMemory(data, size);
+        if (!vf) {
+            LOGE("VFileFromConstMemory failed for BIOS data");
+            return false;
+        }
+
+        bool ok = m_core->loadBIOS(m_core, vf, 0);
+        if (!ok) {
+            LOGE("mCore loadBIOS rejected the file (size=%zu)", size);
+            vf->close(vf);
+        }
+        return ok;
     }
 
     void setConfigInt(const char* key, int value) override {
@@ -312,6 +352,14 @@ private:
     }
 
     static constexpr size_t kAudioPullFrames = 1024;
+
+    enum Platform {
+        PLATFORM_UNKNOWN = -1,
+        PLATFORM_GB = 1,
+        PLATFORM_GBC = 2,
+        PLATFORM_SGB = 3,
+        PLATFORM_GBA = 4
+    };
 
     mCore* m_core = nullptr;
     OboeAudioPlayer m_audioPlayer;

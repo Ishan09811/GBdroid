@@ -19,7 +19,7 @@ class SettingsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentSettingsBinding.inflate(inflater, container, false)
+        if (_binding == null) _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         return binding.root
     }
 

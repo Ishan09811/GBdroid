@@ -43,6 +43,9 @@ class MainActivity : AppCompatActivity() {
                 R.id.searchLocationsFragment -> {
                     binding.bottomNavigation.visibility = View.GONE
                 }
+                R.id.biosManagerFragment -> {
+                    binding.bottomNavigation.visibility = View.GONE
+                }
                 else -> {
                     binding.bottomNavigation.visibility = View.VISIBLE
                 }

@@ -1,18 +1,21 @@
 
 package io.github.gbdroid.utils
 
-import io.github.gbdroid.core.PLATFORM
+import io.github.gbdroid.core.Platform
 import java.net.URLEncoder
 
 object IconMetadataHelper {
-    fun getIconUrl(gameTitle: String?, platform: PLATFORM): String? {
+    fun getIconUrl(gameTitle: String?, platform: Platform): String? {
         if (gameTitle.isNullOrBlank()) return null
 
         val systemFolder = when (platform) {
-            PLATFORM.GB -> "Nintendo - Game Boy"
-            PLATFORM.GBA -> "Nintendo - Game Boy Advance"
-            else -> "Nintendo - Game Boy Color" // I assume it to be gbc as mgba does not give us any specific value for gbc
+            Platform.GB -> "Nintendo - Game Boy"
+            Platform.GBA -> "Nintendo - Game Boy Advance"
+            Platform.GBC -> "Nintendo - Game Boy Color"
+            else -> null
         }
+
+        if (systemFolder == null) return null
 
         val encodedSystemFolder = URLEncoder.encode(systemFolder, "UTF-8").replace("+", "%20")
         val sanitizedTitle = gameTitle.replace(Regex("[&*/:`<>?|\\\\\"]"), "_")

@@ -3,6 +3,9 @@ package io.github.gbdroid.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object GlobalConfig : SharedPreferences.OnSharedPreferenceChangeListener {
     const val PREFS_NAME = "app_prefs"
@@ -30,28 +33,30 @@ object GlobalConfig : SharedPreferences.OnSharedPreferenceChangeListener {
     @Volatile var rewindEnable: Boolean = false
 
     fun initialize(context: Context) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        autoSave = prefs.getBoolean("pref_auto_save", true)
-        fastForward = prefs.getBoolean("pref_fast_forward", false)
-        fastForwardMultiplier = prefs.getInt("pref_ff_multiplier", 0)
-        skipBios = prefs.getBoolean("pref_skip_bios", false)
-        idleOptimization = prefs.getString("pref_idle_opt", "detect") ?: "detect"
+        CoroutineScope(Dispatchers.IO).launch {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            autoSave = prefs.getBoolean("pref_auto_save", true)
+            fastForward = prefs.getBoolean("pref_fast_forward", false)
+            fastForwardMultiplier = prefs.getInt("pref_ff_multiplier", 0)
+            skipBios = prefs.getBoolean("pref_skip_bios", false)
+            idleOptimization = prefs.getString("pref_idle_opt", "detect") ?: "detect"
 
-        // Video
-        frameskip = prefs.getInt("pref_frameskip", 0)
-        videoSync = prefs.getBoolean("pref_video_sync", true)
-        fpsCounter = prefs.getBoolean("pref_fps_counter", false)
-        aspectRatio = prefs.getString("pref_aspect_ratio", "keep") ?: "keep"
+            // Video
+            frameskip = prefs.getInt("pref_frameskip", 0)
+            videoSync = prefs.getBoolean("pref_video_sync", true)
+            fpsCounter = prefs.getBoolean("pref_fps_counter", false)
+            aspectRatio = prefs.getString("pref_aspect_ratio", "keep") ?: "keep"
 
-        // Audio
-        volume = prefs.getInt("pref_volume", 256)
-        mute = prefs.getBoolean("pref_mute", false)
-        audioSync = prefs.getBoolean("pref_audio_sync", true)
+            // Audio
+            volume = prefs.getInt("pref_volume", 256)
+            mute = prefs.getBoolean("pref_mute", false)
+            audioSync = prefs.getBoolean("pref_audio_sync", true)
 
-        // System
-        rtcEnable = prefs.getBoolean("pref_rtc", true)
-        rewindEnable = prefs.getBoolean("pref_rewind", false)
-        prefs.registerOnSharedPreferenceChangeListener(this)
+            // System
+            rtcEnable = prefs.getBoolean("pref_rtc", true)
+            rewindEnable = prefs.getBoolean("pref_rewind", false)
+            prefs.registerOnSharedPreferenceChangeListener(this@GlobalConfig)
+        }
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {

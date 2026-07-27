@@ -50,6 +50,8 @@ public:
 
     virtual int getPlatform() = 0;
 
+    virtual bool loadBios(const uint8_t* data, size_t size) = 0;
+
     virtual void setConfigInt(const char* key, int value) = 0;
     virtual void setConfigString(const char* key, const char* value) = 0;
 

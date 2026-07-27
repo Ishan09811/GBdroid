@@ -6,15 +6,17 @@ import io.github.gbdroid.GBdroidApplication
 import io.github.gbdroid.utils.GlobalConfig
 import java.io.ByteArrayOutputStream
 
-enum class PLATFORM(val value: Int) {
-    NONE(-1), GBA(0), GB(1);
+enum class Platform(val value: Int) {
+    UNKNOWN(-1), GB(1), GBC(2), SGB(3), GBA(4);
 
     companion object {
-        fun from(value: Int): PLATFORM = when (value) {
-            -1 -> NONE
-            0 -> GBA
+        fun from(value: Int): Platform = when (value) {
+            -1 -> UNKNOWN
             1 -> GB
-            else -> NONE
+            2 -> GBC
+            3 -> SGB
+            4 -> GBA
+            else -> UNKNOWN
         }
     }
 }
@@ -110,8 +112,8 @@ object Core {
         return romBytes[offset].toInt() and 0xFF
     }
 
-    fun getPlatform(): PLATFORM {
-        return PLATFORM.from(nativeGetPlatform())
+    fun getPlatform(): Platform {
+        return Platform.from(nativeGetPlatform())
     }
 
     fun applyConfigs() {
@@ -120,14 +122,17 @@ object Core {
         nativeSetConfigInt("mute", if (GlobalConfig.mute) 1 else 0)
     }
 
-    fun isGba(): Boolean = getPlatform() == PLATFORM.GBA
+    fun isGba(): Boolean = getPlatform() == Platform.GBA
 
     fun loadSaveData(saveBytes: ByteArray): Boolean = nativeLoadSaveData(saveBytes)
     fun exportSaveData(): ByteArray = nativeExportSaveData()
 
+    fun loadBios(biosBytes: ByteArray): Boolean = nativeLoadBios(biosBytes)
+
     private external fun nativeInit(): Boolean
     private external fun nativeShutdown()
     private external fun nativeLoadRom(romData: ByteArray, skipBios: Boolean, rtcEnable: Boolean): Boolean
+    private external fun nativeLoadBios(biosData: ByteArray): Boolean
     private external fun nativeQuickLoadRom(romData: ByteArray): Boolean
     private external fun nativeReset()
     private external fun nativeRunFrame()

@@ -35,7 +35,7 @@ class SearchLocationsFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
-        _binding = FragmentSearchLocationsBinding.inflate(inflater, container, false)
+        if (_binding == null) _binding = FragmentSearchLocationsBinding.inflate(inflater, container, false)
         binding.root.applySafePadding()
         loadFolders()
         binding.folderList.layoutManager = LinearLayoutManager(requireContext())

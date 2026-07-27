@@ -129,7 +129,6 @@ class GamesViewModel : ViewModel() {
                 element.iconUrl = getIconUrl(element.title ?: "", Core.getPlatform())
                 GameCacheManager.saveGame(element)
                 listStructureChanged = true
-                Core.reset()
             }
         }
         return listStructureChanged
@@ -160,7 +159,6 @@ class GamesViewModel : ViewModel() {
                 )
 
                 GameCacheManager.saveGame(updatedGame)
-                Core.reset()
 
                 withContext(Dispatchers.Main) {
                     _gameList.value = _gameList.value.map {

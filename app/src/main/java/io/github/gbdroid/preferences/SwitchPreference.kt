@@ -11,6 +11,10 @@ import io.github.gbdroid.R
 import androidx.core.content.withStyledAttributes
 import androidx.core.content.edit
 import io.github.gbdroid.utils.GlobalConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SwitchPreference @JvmOverloads constructor(
     context: Context,
@@ -55,9 +59,13 @@ class SwitchPreference @JvmOverloads constructor(
                 }
 
                 prefKey?.let { key ->
-                    switchView.isChecked = sharedPreferences.getBoolean(key, defaultValue)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val savedValue = sharedPreferences.getBoolean(key, defaultValue)
+                        withContext(Dispatchers.Main) {
+                            switchView.isChecked = savedValue
+                        }
+                    }
                 }
-
             }
         }
 
@@ -67,7 +75,9 @@ class SwitchPreference @JvmOverloads constructor(
 
         switchView.setOnCheckedChangeListener { _, isChecked ->
             prefKey?.let { key ->
-                sharedPreferences.edit { putBoolean(key, isChecked) }
+                CoroutineScope(Dispatchers.IO).launch {
+                    sharedPreferences.edit { putBoolean(key, isChecked) }
+                }
             }
         }
     }

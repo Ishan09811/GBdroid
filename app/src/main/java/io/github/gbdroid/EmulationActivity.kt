@@ -19,6 +19,7 @@ import io.github.gbdroid.input.InputState
 import io.github.gbdroid.renderer.gl.EmulationThread
 import io.github.gbdroid.renderer.gl.FrameBuffer
 import io.github.gbdroid.renderer.gl.OpenGLRenderer
+import io.github.gbdroid.utils.BiosStore
 import io.github.gbdroid.utils.GlobalConfig
 import io.github.gbdroid.utils.SaveDataStore
 import io.github.gbdroid.utils.applySafePadding
@@ -93,6 +94,13 @@ class EmulationActivity : AppCompatActivity() {
             val ok = Core.loadRom(uri)
             if (ok) {
                 currentGameCode = Core.gameCode()
+                if (BiosStore.has(Core.getPlatform())) {
+                    val biosBytes = BiosStore.load(Core.getPlatform())
+                    if (!Core.loadBios(biosBytes)) {
+                        Toast.makeText(this, "Imported BIOS was rejected", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
                 val save = SaveDataStore.load(currentGameCode!!)
                 val saveOk = Core.loadSaveData(save)
                 if (!saveOk) {

@@ -30,6 +30,14 @@
             app:exitAnim="@anim/nav_default_exit_anim"
             app:popEnterAnim="@anim/nav_default_pop_enter_anim"
             app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+
+        <action
+            android:id="@+id/action_settingsFragment_to_biosManagerFragment"
+            app:destination="@id/biosManagerFragment"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
     </fragment>
 
     <fragment
@@ -37,4 +45,10 @@
         android:name="io.github.gbdroid.fragments.SearchLocationsFragment"
         android:label="Game Folders"
         tools:layout="@layout/fragment_search_locations" />
+
+    <fragment
+        android:id="@+id/biosManagerFragment"
+        android:name="io.github.gbdroid.fragments.BiosManagerFragment"
+        android:label="Bios"
+        tools:layout="@layout/fragment_bios_manager" />
 </navigation>

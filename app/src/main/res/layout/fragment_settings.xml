@@ -51,6 +51,14 @@
                     app:title="Search Locations"
                     app:subtitle="Manage directories containing game ROMs" />
 
+                <io.github.gbdroid.preferences.ImportBiosPreference
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:padding="16dp"
+                    app:title="Import Bios"
+                    app:subtitle="" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

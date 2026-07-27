@@ -74,6 +74,22 @@ Java_io_github_gbdroid_core_Core_nativeLoadRom(JNIEnv* env, jobject /*thiz*/, jb
     return ok ? JNI_TRUE : JNI_FALSE;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_io_github_gbdroid_core_Core_nativeLoadBios(JNIEnv* env, jobject /*thiz*/, jbyteArray biosData) {
+    std::lock_guard<std::mutex> lock(g_coreMutex);
+    if (g_core == nullptr) {
+        LOGE("nativeLoadBios called before nativeInit");
+        return JNI_FALSE;
+    }
+    jsize len = env->GetArrayLength(biosData);
+    std::vector<uint8_t> buffer(static_cast<size_t>(len));
+    env->GetByteArrayRegion(biosData, 0, len, reinterpret_cast<jbyte*>(buffer.data()));
+
+    bool ok = g_core->loadBios(buffer.data(), buffer.size());
+    LOGI("nativeLoadBios: %zu bytes, success=%d", buffer.size(), ok);
+    return ok ? JNI_TRUE : JNI_FALSE;
+}
+
 JNIEXPORT void JNICALL
 Java_io_github_gbdroid_core_Core_nativeReset(JNIEnv* env, jobject /*thiz*/) {
     std::lock_guard<std::mutex> lock(g_coreMutex);
